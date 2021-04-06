@@ -6,8 +6,6 @@ import (
 	"fmt"
 )
 
-var txnKey = struct{}{}
-
 // Store provides functions to execute the quries and txn
 type Store struct {
 	*Queries
@@ -68,9 +66,6 @@ func (store *Store) TransferTxn(ctx context.Context, arg TransferTxnParams) (Tra
 	err := store.execTxn(ctx, func(q *Queries) error {
 		var err error
 
-		txnName := ctx.Value(txnKey)
-
-		fmt.Println(txnName, " : create transfer")
 		result.Transfer, err = q.CreateTransfer(ctx, CreateTransferParams{
 			FromAccountID: arg.FromAccountID,
 			ToAccountID:   arg.ToAccountID,
@@ -79,7 +74,7 @@ func (store *Store) TransferTxn(ctx context.Context, arg TransferTxnParams) (Tra
 		if err != nil {
 			return err
 		}
-		fmt.Println(txnName, " : create Entry 1")
+
 		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
 			AccountID: arg.FromAccountID,
 			Amount:    -arg.Amount, // negative
@@ -88,7 +83,6 @@ func (store *Store) TransferTxn(ctx context.Context, arg TransferTxnParams) (Tra
 			return err
 		}
 
-		fmt.Println(txnName, " : create Entry 2")
 		result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParams{
 			AccountID: arg.ToAccountID,
 			Amount:    arg.Amount,
@@ -97,13 +91,12 @@ func (store *Store) TransferTxn(ctx context.Context, arg TransferTxnParams) (Tra
 			return err
 		}
 
-		fmt.Println(txnName, " : get account 1")
 		// get accounts and update accounts' balance
 		account1, err := q.GetAccountForUpdate(ctx, arg.FromAccountID)
 		if err != nil {
 			return err
 		}
-		fmt.Println(txnName, " : update account 1")
+
 		result.FromAccount, err = q.UpdateAccount(ctx, UpdateAccountParams{
 			ID:      arg.FromAccountID,
 			Balance: account1.Balance - arg.Amount,
@@ -112,13 +105,11 @@ func (store *Store) TransferTxn(ctx context.Context, arg TransferTxnParams) (Tra
 			return err
 		}
 
-		fmt.Println(txnName, " : get account 2")
 		account2, err := q.GetAccountForUpdate(ctx, arg.ToAccountID)
 		if err != nil {
 			return err
 		}
 
-		fmt.Println(txnName, " : update account 2")
 		result.ToAccount, err = q.UpdateAccount(ctx, UpdateAccountParams{
 			ID:      arg.ToAccountID,
 			Balance: account2.Balance + arg.Amount,
