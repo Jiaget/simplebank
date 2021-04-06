@@ -15,7 +15,7 @@ func TestTransferTxn(t *testing.T) {
 	account2 := createRandomAccount(t)
 
 	// concurrency( 并发 )
-	n := 5
+	n := 3
 	amount := int64(10)
 
 	fmt.Println(">> origin:", account1.Balance, account2.Balance)
@@ -25,8 +25,10 @@ func TestTransferTxn(t *testing.T) {
 	results := make(chan TransferTxnResult)
 
 	for i := 0; i < n; i++ {
+		txnName := fmt.Sprintf("txn %v", i+1)
 		go func() {
-			result, err := store.TransferTxn(context.Background(), TransferTxnParams{
+			ctx := context.WithValue(context.Background(), txnKey, txnName)
+			result, err := store.TransferTxn(ctx, TransferTxnParams{
 				FromAccountID: account1.ID,
 				ToAccountID:   account2.ID,
 				Amount:        amount,
