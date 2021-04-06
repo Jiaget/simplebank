@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -16,6 +17,8 @@ func TestTransferTxn(t *testing.T) {
 	// concurrency( 并发 )
 	n := 5
 	amount := int64(10)
+
+	fmt.Println(">> origin:", account1.Balance, account2.Balance)
 
 	// channels connects the go routines.
 	errs := make(chan error)
@@ -33,6 +36,7 @@ func TestTransferTxn(t *testing.T) {
 		}()
 	}
 	// check the results
+	existed := make(map[int]bool)
 	for i := 0; i < n; i++ {
 		err := <-errs
 		require.NoError(t, err)
@@ -74,6 +78,43 @@ func TestTransferTxn(t *testing.T) {
 		_, err = store.GetEntry(context.Background(), toEntry.ID)
 		require.NoError(t, err)
 
-		// check accounts' balance (TODO)
+		//check accounts
+		fromAccount := result.FromAccount
+		require.NotEmpty(t, fromAccount)
+		require.Equal(t, account1.ID, fromAccount.ID)
+
+		toAccount := result.ToAccount
+		require.NotEmpty(t, toAccount)
+		require.Equal(t, account2.ID, toAccount.ID)
+		// check accounts' balance
+
+		fmt.Println(">> txn", fromAccount.Balance, toAccount.Balance)
+
+		diff1 := account1.Balance - fromAccount.Balance // account1 is the state of the fromAccount before the transfer. so diff1 must be positive
+		diff2 := toAccount.Balance - account2.Balance
+		require.Equal(t, diff1, diff2)
+		require.True(t, diff1 > 0)
+		// in this test func. we make (n = 5) txns, and every txn transfer (amount = 10) from acount1 to acount2.
+		// so the the diff1 must be 1 * amount, 2 * amount, 3 * amount, 4 * amount...
+		require.True(t, diff1%10 == 0)
+
+		// check which round of this transfer.
+		k := int(diff1 / amount)
+		// round time must be [1, n]
+		require.True(t, k >= 1 && k <= n)
+		// every round must run only ones, we make a map to record the runned round
+		require.NotContains(t, existed, k)
+		existed[k] = true
 	}
+	// after all txns, check the updated account
+	updatedAccount1, err := testQueries.GetAccount(context.Background(), account1.ID)
+	require.NoError(t, err)
+
+	updatedAccount2, err := testQueries.GetAccount(context.Background(), account2.ID)
+	require.NoError(t, err)
+
+	fmt.Println(">> after", updatedAccount1.Balance, updatedAccount2.Balance)
+
+	require.Equal(t, account1.Balance-int64(n)*amount, updatedAccount1.Balance)
+	require.Equal(t, account2.Balance+int64(n)*amount, updatedAccount2.Balance)
 }
