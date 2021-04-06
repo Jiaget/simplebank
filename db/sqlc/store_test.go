@@ -15,7 +15,7 @@ func TestTransferTxn(t *testing.T) {
 	account2 := createRandomAccount(t)
 
 	// concurrency( 并发 )
-	n := 3
+	n := 10
 	amount := int64(10)
 
 	fmt.Println(">> origin:", account1.Balance, account2.Balance)
