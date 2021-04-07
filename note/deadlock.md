@@ -1,5 +1,5 @@
-
-# 发生场景 与 调试方法
+# 死锁1
+## 发生场景 与 调试方法
 - txnname: 利用上下文context.WithValue() 给协程传入事务名，可以获取发生死锁的事务。
 - 打Log之后再运行测试程序可以看到：
 ```
@@ -51,7 +51,7 @@ Process 986 waits for ShareLock on transaction 1453; blocked by process 969.
 HINT:  See server log for query details.
 CONTEXT:  while locking tuple (0,1) in relation "accounts"
 ```
-# 分析与解决方法
+## 分析与解决方法
 
 在该情况下，可以在wiki 中找到pg lock相关的信息。
 获取查询pg后台记录的关于锁的信息的SQL语句。这里就不赘述了。
@@ -74,5 +74,23 @@ FOR NO KEY UPDATE;
 
 但是，死锁问题仍然没有解决。。。
 
-# 死锁的残存
+# 死锁2
+上面的死锁是由于访问两张由外键约束的表导致的死锁。
 
+实际代码运行过程中还有可能因为两个事务同时访问一张表而导致的死锁。
+
+在完成一个 transfer 事务的过程中，我们需要给转账账户扣除金额，同时给被转账户增加金额。这样在同个事务会访问`accounts`表两次, 如果只是多个事务同时进行 `account1 -> account2` 的操作，不会发生死锁，因为这些事务都是按顺序访问同一张表的 `account1` 和 `account2` 的行。这些事务会按照序列完成交易。但是如果有两个事务， 事务1 进行 `account1 -> account2` 而 事务2 进行 `account2 -> account 1`的操作。假设事务1开始对 `account1` 的行进行写操作，事务2已开始对`account2`的行进行写操作。事务1还需要对`account2`写入，但是由于`account2` 行有事务2上的锁，没有释放，事务1 被挂起。 同理， 事务2也会因为对`account1`的访问而被挂起。事务2会因为postgres检测死锁报错。
+
+一下表格将表现这类死锁发生的场景
+
+| |事务1 | 事务2|
+|--|--|--|
+|T1: account1| UPDATE| |
+|T1: account2| | UPDATE|
+|T2: account1| | UPDATE（HANG UP）|
+|T2: account2| UPDATE（HANG UP） | |
+
+## 解决方案
+在transfer事务中，有两次账户写入操作，死锁是发生在两个事务`fromAccountID` 和 `toAccountID`出现了置换导致的。
+
+所以我们可以将这两个ID序列化处理（比如优先处理ID较小的一个）即可避免死锁发生。
