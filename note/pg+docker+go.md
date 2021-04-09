@@ -146,3 +146,20 @@ https://pkg.go.dev/github.com/go-playground/validator
 ```
 Currency string `json:"currency" binding:"require,oneof=RMB USD EUR"`
 ```
+
+## 从文件或者环境变量加载配置 （viper）
+- viper 的功能
+  - 找到并加载配置文件
+    - JSON
+    - TOML
+    - YAML
+    - ENV
+    - INI
+  - 从环境变量或者`flags`中读取配置信息
+    - 覆盖已有值；
+    - 设置默认值。    - 
+  - 从远程系统读取配置信息
+    - Etcd, consul
+  - 远程监控，修改配置文件
+- 安装
+- `go get github.com/spf13/viper`
