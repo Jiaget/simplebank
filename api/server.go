@@ -9,12 +9,12 @@ import (
 type Server struct {
 	// we make this field pravite, so we can only use the Server.Start() function
 	// to call this field
-	store  *db.Store
+	store  db.Store
 	router *gin.Engine
 }
 
 // NewServer creates a new HTTP server and setup a router
-func NewServer(store *db.Store) *Server {
+func NewServer(store db.Store) *Server {
 	server := &Server{store: store}
 	router := gin.Default()
 

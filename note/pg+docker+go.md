@@ -147,7 +147,7 @@ https://pkg.go.dev/github.com/go-playground/validator
 Currency string `json:"currency" binding:"require,oneof=RMB USD EUR"`
 ```
 
-## 从文件或者环境变量加载配置 （viper）
+## 10.从文件或者环境变量加载配置 （viper）
 - viper 的功能
   - 找到并加载配置文件
     - JSON
@@ -163,3 +163,27 @@ Currency string `json:"currency" binding:"require,oneof=RMB USD EUR"`
   - 远程监控，修改配置文件
 - 安装
 - `go get github.com/spf13/viper`
+- 数据绑定
+```
+type Config struct {
+	DBDriver      string `mapstructure:"DB_DRIVER"`
+	DBSource      string `mapstructure:"DB_SOURCE"`
+	ServerAddress string `mapstructure:"SERVER_ADDRESS"`
+}
+```
+
+## 11.mock
+- 优势
+  - 独立测试，避免冲突
+  - 更快测试，减少连接数据库的时间花费
+  - 100%的覆盖，更容易写一些边界的cases（比如errors）
+- 方法
+  - fake DB:将数据存储在内存里
+  - DB stubs:GOMOCK
+  
+这里我们使用`gomock`来实现` go install github.com/golang/mock/mockgen@v1.5.0`
+
+当前的数据库连接参数写在`store`结构体里,为了方便扩展功能，将`store`改写成接口。
+
+但是会出现的问题是`Queries`结构体中的所有方法都需要填入该接口里。这会消耗大量时间，且会增加整个代码的耦合度。`sqlc`可以实现接口代码的生成，在sqlc.yaml中设置即可。最后
+`sqlc generate`
