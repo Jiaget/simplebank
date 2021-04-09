@@ -110,9 +110,39 @@ Queries 结构体只对一张表进行一个操作，因此Queries结构体不�
   - 并发: 
     - 使用channel 来联系主进程和协程。协程内往channel传送信息，协程外接受channel中的信息。
     - 当两个事务同时访问同一个数据的时候，由于数据库的隔离性为‘读已提交’，当事务1对数据进行了修改，事务2仍然获取该数据的旧数据。这会给转账的业务逻辑带来问题。
-      - 结局方案：行锁 `SELECT FOR UPDATE`
+      - 解决方案：行锁 `SELECT FOR UPDATE`
         - 数据库的事务层的设计中，‘读已提交’虽然可以提高数据库数据处理的效率，但是，会出现上面的问题。上行锁其实就是提高局部数据的隔离等级，保证当前可能会出现问题的数据的安全性。
 
 - TDD:
   - 测试驱动开发，先编写测试文件使程序出错，再编写程序来通过测试）
 - 处理死锁问题
+  - 详情见 ./deadlock.md
+## 8. CI
+github自动化测试部署。
+
+脚本写在`.github/workflows/ci.yml`
+
+更多详情查看文档即可
+
+## 9.RESTful HTTP API
+- 一些流行的web框架
+  - Gin
+  - Beego
+  - Echo
+  - Revel
+  - Martini
+  - Fiber
+  - Buffalo
+- 流行的HTTP路由
+  - FastHttp
+  - Gorilla Mux
+  - HttpRouter
+  - Chi
+
+这里使用`Gin`框架
+- 验证机制。文档与实例
+
+https://pkg.go.dev/github.com/go-playground/validator
+```
+Currency string `json:"currency" binding:"require,oneof=RMB USD EUR"`
+```
