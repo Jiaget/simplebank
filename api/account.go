@@ -11,7 +11,7 @@ import (
 
 type createAccountRequest struct {
 	Owner    string `json:"owner" binding:"required"`
-	Currency string `json:"currency" binding:"required,oneof=RMB USD EUR"`
+	Currency string `json:"currency" binding:"required,currency"`
 }
 
 // Context in gin contains a lot of useful context functions, so we don't use the built-in Context

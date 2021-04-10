@@ -147,6 +147,15 @@ https://pkg.go.dev/github.com/go-playground/validator
 Currency string `json:"currency" binding:"require,oneof=RMB USD EUR"`
 ```
 
+### 自定义验证
+
+使用`validator` 包 自定义验证函数。并在`Gin`中的`binding` tag中注册，定义验证tag名即可
+```
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		v.RegisterValidation("currency", validateCurrency)
+	}
+```
+
 ## 10.从文件或者环境变量加载配置 （viper）
 - viper 的功能
   - 找到并加载配置文件
@@ -187,3 +196,5 @@ type Config struct {
 
 但是会出现的问题是`Queries`结构体中的所有方法都需要填入该接口里。这会消耗大量时间，且会增加整个代码的耦合度。`sqlc`可以实现接口代码的生成，在sqlc.yaml中设置即可。最后
 `sqlc generate`
+
+使用`gomock`可以自动起服务并进行测试，具体参考代码在`/api/account_test.go`中
