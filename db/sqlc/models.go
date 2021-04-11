@@ -33,7 +33,7 @@ type Transfer struct {
 
 type User struct {
 	Username          string    `json:"username"`
-	Fullname          string    `json:"fullname"`
+	FullName          string    `json:"full_name"`
 	HashedPassword    string    `json:"hashed_password"`
 	Email             string    `json:"email"`
 	PasswordChangedAt time.Time `json:"password_changed_at"`

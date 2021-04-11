@@ -1,6 +1,6 @@
 CREATE TABLE "users" (
   "username" varchar PRIMARY KEY,
-  "fullname" varchar NOT NULL,
+  "full_name" varchar NOT NULL,
   "hashed_password" varchar NOT NULL,
   "email" varchar UNIQUE NOT NULL,
   "password_changed_at" timestamptz NOT NULL DEFAULT '0001-1-1 00:00:00Z',
