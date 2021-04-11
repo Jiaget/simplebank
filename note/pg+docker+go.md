@@ -30,6 +30,7 @@ https://www.dbdiagram.io
   - 注意事项：
     - windows环境中可以使用gow来模拟linux环境，使用make命令。
     - 在windows写Makefile时，由于tab键和linux有所区别，故可以在vim中写Makefile文件。
+    - 当遇到新的需求，需要增加数据库的表/列时，不要移除原有的，增加新的迁移脚本即可。
 #### Makefile 文件
 ```
 postgres:
