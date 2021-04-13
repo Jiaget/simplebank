@@ -58,7 +58,7 @@ func (server *Server) validTransfer(ctx *gin.Context, accountID int64, currency 
 		return false
 	}
 	if account.Currency != currency {
-		err := fmt.Errorf("account [%d] currency dismatch: %s to %s .", accountID, account.Currency, currency)
+		err := fmt.Errorf("account [%d] currency dismatch: %s to %s", accountID, account.Currency, currency)
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return false
 	}
