@@ -2,16 +2,16 @@ package api
 
 import (
 	"database/sql"
-	"fmt"
+	"errors"
 	"net/http"
 
 	db "github.com/Jiaget/simplebank/db/sqlc"
+	"github.com/Jiaget/simplebank/token"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 )
 
 type createAccountRequest struct {
-	Owner    string `json:"owner" binding:"required"`
 	Currency string `json:"currency" binding:"required,currency"`
 }
 
@@ -23,8 +23,10 @@ func (server *Server) createAccount(ctx *gin.Context) {
 		return
 	}
 
+	authPayload := ctx.MustGet(authorizationHeaderKey).(*token.PalyLoad)
+
 	arg := db.CreateAccountParams{
-		Owner:    req.Owner,
+		Owner:    authPayload.Username,
 		Currency: req.Currency,
 		Balance:  0,
 	}
@@ -67,13 +69,19 @@ func (server *Server) getAccount(ctx *gin.Context) {
 		return
 	}
 
+	authPayload := ctx.MustGet(authorizationHeaderKey).(*token.PalyLoad)
+	if authPayload.Username != account.Owner {
+		err := errors.New("account doesn't belong to the authenticated user")
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
 	ctx.JSON(http.StatusOK, account)
 }
 
 type listAccountRequest struct {
-	Owner    string `form:"owner" binding:"required"`
-	PageID   int32  `form:"page_id" binding:"required,min=1"`
-	PageSize int32  `form:"page_size" binding:"required,min=5,max=10"`
+	PageID   int32 `form:"page_id" binding:"required,min=1"`
+	PageSize int32 `form:"page_size" binding:"required,min=5,max=10"`
 }
 
 func (server *Server) listAccount(ctx *gin.Context) {
@@ -83,23 +91,21 @@ func (server *Server) listAccount(ctx *gin.Context) {
 		return
 	}
 
+	authPayload := ctx.MustGet(authorizationHeaderKey).(*token.PalyLoad)
 	arg := db.ListAccountsParams{
-		Owner:  req.Owner,
+		Owner:  authPayload.Username,
 		Limit:  req.PageSize,
 		Offset: (req.PageID - 1) * req.PageSize,
 	}
-	fmt.Println(arg)
 	accounts, err := server.store.ListAccounts(ctx, arg)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			fmt.Println("jiaget")
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	fmt.Println(accounts)
 
 	ctx.JSON(http.StatusOK, accounts)
 }

@@ -199,3 +199,10 @@ type Config struct {
 `sqlc generate`
 
 使用`gomock`可以自动起服务并进行测试，具体参考代码在`/api/account_test.go`中
+
+## 12. token认证
+- JWT
+- PASETO
+  这两类库函数详细介绍在`token.md`
+
+  本项目用两个库各实现了对称密钥算法。两个均可以使用。代码在`token`包。
