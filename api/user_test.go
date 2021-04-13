@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -80,6 +81,26 @@ func TestCreateUserAPI(t *testing.T) {
 
 				// check the respons body
 				requireBodyMatchUser(t, recorder.Body, user)
+			},
+		},
+		{
+			name: "InternalErr",
+			body: gin.H{
+				"username":  user.Username,
+				"full_name": user.FullName,
+				"password":  password,
+				"email":     user.Email,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				// build stub
+				store.EXPECT().
+					CreateUser(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return(db.User{}, sql.ErrConnDone)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				// check http status code
+				require.Equal(t, http.StatusInternalServerError, recorder.Code)
 			},
 		},
 	}
