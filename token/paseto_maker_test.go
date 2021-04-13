@@ -5,12 +5,11 @@ import (
 	"time"
 
 	"github.com/Jiaget/simplebank/util"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/require"
 )
 
-func TestJWTMaker(t *testing.T) {
-	maker, err := NewJWTMaker(util.RandomString(32))
+func TestPasetoMaker(t *testing.T) {
+	maker, err := NewPasetoMaker(util.RandomString(32))
 	require.NoError(t, err)
 
 	username := util.RandomOwner()
@@ -34,8 +33,8 @@ func TestJWTMaker(t *testing.T) {
 	require.WithinDuration(t, expiredAt, payload.ExpiredAt, time.Second)
 }
 
-func TestExpiredJWTMaker(t *testing.T) {
-	maker, err := NewJWTMaker(util.RandomString(32))
+func TestExpiredPasetoMaker(t *testing.T) {
+	maker, err := NewPasetoMaker(util.RandomString(32))
 	require.NoError(t, err)
 
 	username := util.RandomOwner()
@@ -51,23 +50,13 @@ func TestExpiredJWTMaker(t *testing.T) {
 	require.Nil(t, payload)
 }
 
-func TestInvalidJWTMaker(t *testing.T) {
-	payload, err := NewPayload(util.RandomOwner(), time.Minute)
-	require.NoError(t, err)
-	jwttoken := jwt.NewWithClaims(jwt.SigningMethodNone, payload)
-	token, err := jwttoken.SignedString(jwt.UnsafeAllowNoneSignatureType)
+func TestInvalidPasetoMaker(t *testing.T) {
+	maker, err := NewPasetoMaker(util.RandomString(32))
 	require.NoError(t, err)
 
-	maker, err := NewJWTMaker(util.RandomString(32))
-	require.NoError(t, err)
-
-	payload, err = maker.VarifyToken(token)
-	require.Error(t, err)
-	require.Nil(t, payload)
-	require.EqualError(t, err, ErrInvalidToken.Error())
-
-	token = "12345"
-	payload, err = maker.VarifyToken(token)
+	token := "12345"
+	payload, err := maker.VarifyToken(token)
 	require.EqualError(t, err, ErrInvalidToken.Error())
 	require.Nil(t, payload)
+
 }
