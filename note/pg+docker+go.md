@@ -203,6 +203,9 @@ type Config struct {
 ## 12. token认证
 - JWT
 - PASETO
-  这两类库函数详细介绍在`token.md`
+这两类库函数详细介绍在`token.md`
 
-  本项目用两个库各实现了对称密钥算法。两个均可以使用。代码在`token`包。
+本项目用两个库各实现了对称密钥算法。两个均可以使用。代码在`token`包。
+
+对于不同程度的数据操作（`Create`, `Get`, `List`, `Transfer`），需要制定不同的授权。授权相关代码，写在`Gin`框架封装的`middleware`中间件中，可以在接受`request`后进行认证后，再提供指定的服务。
+

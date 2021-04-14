@@ -23,7 +23,7 @@ func (server *Server) createAccount(ctx *gin.Context) {
 		return
 	}
 
-	authPayload := ctx.MustGet(authorizationHeaderKey).(*token.PalyLoad)
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.PalyLoad)
 
 	arg := db.CreateAccountParams{
 		Owner:    authPayload.Username,
@@ -91,7 +91,7 @@ func (server *Server) listAccount(ctx *gin.Context) {
 		return
 	}
 
-	authPayload := ctx.MustGet(authorizationHeaderKey).(*token.PalyLoad)
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.PalyLoad)
 	arg := db.ListAccountsParams{
 		Owner:  authPayload.Username,
 		Limit:  req.PageSize,
