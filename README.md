@@ -1,3 +1,9 @@
+## 0. 一些准备
+使用win10操作系统，因此需要做一些工具准备。
+- mingw：轻量级GNU工具，主要目的：在windows使用`make`命令。
+- 在powershell 下使用代理。`$Env:http_proxy="http://127.0.0.1:7890";$Env:https_proxy="http://127.0.0.1:7890"`
+- 修改go的镜像。否则go get基本无法使用，除非使用了代理。 `go env -w GOPROXY=https://goproxy.cn`
+- docker 。 在windows中可以模拟linux环境，有些工具需要编译，可以在docker中编译，或者有直接的docker镜像。
 ## 1.设计数据库与SQL生成
 
 https://www.dbdiagram.io
