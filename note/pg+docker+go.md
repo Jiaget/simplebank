@@ -209,3 +209,58 @@ type Config struct {
 
 对于不同程度的数据操作（`Create`, `Get`, `List`, `Transfer`），需要制定不同的授权。授权相关代码，写在`Gin`框架封装的`middleware`中间件中，可以在接受`request`后进行认证后，再提供指定的服务。
 
+
+## 13. 为项目构建docker镜像
+项目根目录下新建文件`Dockerfile`
+- 未优化
+  - 挑选golang的镜像作为基础镜像。如果希望生成镜像小一点，选择`alpine`版本即可。`FROM golang:1.16.3-alpine3.13`
+  - 指定docker镜像内的工作路径`WORKDIR /app`
+  - 将文件拷贝进目标路径 `COPY . .`
+    - 第一个点代表从当前目录拷贝所有文件
+    - 第二个点代表镜像的路径，即镜像内的`/app`路径。
+  - 编译获取二进制文件 `RUN go build -o main main.go`
+  - 给定端口`EXPOSE 8080`
+  - 设定启动镜像时的运行命令`CMD ["/app/main]`
+  - 最后编译成docker镜像文件 `docker build -t simplebank:latest .` 最后的点代表Dockfile的路径
+虽然最后编译成功，但是通过`docker images`发现生成的镜像文件400多M，非常庞大。接下来需要将这个镜像缩小。
+- 优化
+  - 镜像文件体积庞大的原因是，镜像不仅包含了二进制文件，还包含了源码。解决方法只需要将镜像中的源码清除即可。
+```
+# Build stage
+FROM golang:1.16-alpine3.13 AS buiilder
+WORKDIR /app
+COPY . .
+RUN go build -o main main.go
+
+# Run stage
+FROM alpine:3.13
+WORKDIR /app
+COPY --from=builder /app/main .
+
+EXPOSE 8080
+CMD ["/app/main"]
+```
+-注意： build 阶段，go build 会下载go.mod中的依赖，由于docker容器无法通过主机的代理来下载依赖，可以在`Dockerfile`中设置go的环境变量，使用国内镜像下载依赖
+
+`RUN go env -w GOPROXY=https://goproxy.cn`
+
+## 14.启动docker镜像
+- `docker run --name simplebank -p 8080:8080 simplebank:latest`
+  - 启动时报错“无法加载conifg文件，文件找不到”
+  - 原因：为了缩小镜像大小，只移动了编译的二进制文件，只需要在`Dockerfile`添加移动配置文件的命令即可。
+- 修复了配置文件问题，继续启动docker镜像会发现启动了`GIN`框架的 DEBUG 模式，
+```
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+```
+  - 按照提示信息，切换到`release`模式 `docker run --name simplebank -p 8080:8080 -e GIN_MODE=release simplebank:latest`
+- 在POSTMan 发送请求，出现500的报错。原因是无法连接到 `127.0.0.1:5432` 。这是因为启动的docker镜像服务连接的ip地址不再是主机的IP，而是docker容器里的ip。我们只需要将访问数据库的ip参数修改成同样是docker中pg的IP即可。
+  - 查看docker容器的参数 `docker container inspect postgres13` 获取Pg的ip地址
+    - 方法一:将连接数据库参数添加到docker 的 `-e` Tag中`docker run --name simplebank -p 8080:8080 -e GIN_MODE=release -e DB_SOURCE="postgresql://root:secret@172.17.0.3:5432/simple_bank?sslmode=disable" simplebank:latest`
+    - 方法二（推荐）使用docker 的 network
+      - `docker network ls` 查看docker 当前的networks
+      - `docker network inspect bridge` 查看bridge的详细信息。我们可以发现，容器运行在该network下，我们可以自己建一个类似bridge的 network。 这样pg 和simplebank 两个容器可以使用名字相互获取对方的ip地址，ip地址之后再发生变化也不需要修改命令参数了
+      - `docker network create bank-network` 创建一个network bank-network。
+      - `docker network connect bank-network postgres13`。 将pg连接在该network下。
+      - `docker run --name simplebank --network bank-network -p 8080:8080 -e GIN_MODE=release -e DB_SOURCE="postgresql://root:secret@postgres13:5432/simple_bank?sslmode=disable" simplebank:latest` success!
